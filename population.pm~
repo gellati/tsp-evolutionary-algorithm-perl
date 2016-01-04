@@ -1,0 +1,360 @@
+package population;
+
+use Route;
+
+
+sub new{
+    my $class = shift;
+    my $self = {
+      population = ();
+    };
+    bless $self, $class;
+    return $self;
+}
+
+
+sub createPopulation{
+  my $self = shift;
+  my $popsize = shift;
+  my $vector = shift;
+
+  my ($i, $j);
+  my @population;
+  for($i = 0; $i < $popsize; $i++){
+    my $route = route->new;
+    push(@{$self->population}, $route->createRandomRoute($vector);
+
+  
+
+
+}
+
+sub generate_arrays{
+  my $self = shift;
+  my $range = shift;
+  my $n_arrays = shift;
+
+  my ($i, $j);
+  my @population;
+  my $vector;
+  for($i = 0; $i < $n_arrays; $i++){
+    $vector = $self->copy_vector($range);
+#    print "b " . "@$vector" . "\n";
+
+    push(@population, fisher_yates_shuffle($vector));
+
+#    print "a " . "@$vector" . "\n";
+#    print "v " . "@{$population[$i]}" . "\n";
+  }
+
+#  print "ga " . @{$population[1]}->[2] . "\n";
+  return \@population;
+}
+
+
+# randomly permutate @array in place
+sub fisher_yates_shuffle{
+    my $array = shift;
+    my $i = @$array;
+    print "fy " . $i . "\n";
+    while ( --$i )
+    {
+        my $j = int rand( $i+1 );
+        @$array[$i,$j] = @$array[$j,$i];
+    }
+    return $array;
+}
+
+
+
+
+sub copy_vector{
+  my $self = shift;
+  my $vector = shift;
+  my @new_vector = ();
+  my $i;
+  my $vector_length = scalar(@$vector);
+  for($i = 0; $i < $vector_length; $i++){
+    $new_vector[$i] = @$vector[$i];
+  }
+  return \@new_vector;
+}
+
+
+sub crossover{
+  my $vector1 = shift;
+  my $vector2 = shift;
+  my $xopoint = shift;
+
+  my $vector_length = scalar(@$vector1);
+  my ($i, $j);
+  my @new_vector1 = ();
+  my @new_vector2 = ();
+  
+  for($i = 0; $i < $xopoint; $i++){
+    $new_vector1[$i] = @$vector1[$i];
+    $new_vector2[$i] = @$vector2[$i];
+  }
+
+  for($i = $xopoint; $i < $vector_length; $i++){
+    $new_vector1[$i] = @$vector2[$i];
+    $new_vector2[$i] = @$vector1[$i];
+  }
+
+  
+  my $xostart = $xopoint;
+  my $xoend = $vector_length;
+
+#  my $xostart = $xopoint;
+#  my $xoend = $vector_length;
+
+
+#  my ($new_vector1, $new_vector2) = pmxx(\@new_vector1, \@new_vector2, $xostart, $xoend);
+
+  my ($new_vector1, $new_vector2) = pmx($vector1, $vector2, $xostart, $xoend);
+
+
+  return (\@new_vector1, \@new_vector2);
+
+}
+
+
+
+
+sub pmx{
+  my $vector1 = shift;
+  my $vector2 = shift;
+  my $xostart = shift;
+  my $xoend = shift;
+
+  my ($i, $j, $k);
+  my ($element1, $element2);
+  my ($e1pos, $e2pos);
+
+  my $vector_start = 0;
+  my $vector_length = scalar(@$vector1);
+
+  my $new_vector1 = copy_vector($vector1);
+  my $new_vector2 = copy_vector($vector2);
+
+  my (@xoelements1, @xoelements2);
+  for($i = $xostart; $i < $xoend; $i++){
+
+    push(@xoelements1, $vector1[$i]); # crossover elements on vector 1
+    push(@xoelements2, $vector2[$i]); # crossover elements on vector 2
+
+#print "bfs " . @$new_vector1[$i] . " " . @$new_vector2[$i] . "\n";
+    swap2($new_vector1, $new_vector2, $i, $i);
+#print "afs " . @$new_vector1[$i] . " " . @$new_vector2[$i] . "\n";
+  }
+
+#print "@xoelements1" . "\n";
+
+
+  my $xolength = scalar(@xoelements1);
+
+  for($k = 0; $k < 2; $k++){
+
+  for($i = 0; $i < $vector_length; $i++){
+      if($i == $xoend){
+#	  last; # don't do this
+      }
+    if($i == $xostart){
+      $i = $xoend - 1;
+      next;
+    }
+
+# first vector 1
+
+#if($k == 0){
+    for($j = 0; $j < $xolength; $j++){
+#print @$vector1[$i] . " " . $xoelements1[$j] . "\n";
+
+      if(@$new_vector1[$i] == $xoelements2[$j]){
+#print $i . " " . @$new_vector1[$i] . " " . $xoelements2[$j] . "\n";
+        $e1pos = find(0, $vector_length, $vector2, @$new_vector1[$i]);
+#print $e1pos . "\n";
+        @$new_vector1[$i] = @$vector1[$e1pos];
+
+#print $vector1[$e1pos] . "\n";
+      }
+    }
+#}
+
+#if($k == 1){
+    for($j = 0; $j < $xolength; $j++){
+      if(@$new_vector2[$i] == $xoelements1[$j]){
+
+        $e2pos = find(0, $vector_length, $vector1, @$new_vector2[$i]);
+        @$new_vector2[$i] = @$vector2[$e2pos];
+
+      }
+    }
+#}
+
+
+  }
+}
+
+
+
+
+
+
+
+
+=comment
+  for($i = $xostart; $i < $xoend; $i++){
+    $element1 = $vector1[$i];
+    $element2 = $vector2[$i];
+
+    swap($vector1, $vector2, $i, $i);
+
+    if($element1 != $element2){
+# first child 1
+
+# elements before crossover segment
+      for($j = 0; $j < $xostart; $j++){
+        if($vector1[$j] == $vector1[$i]){
+          swap($vector1, $vector2, $j, $j);
+        }
+      }
+
+# elements after crossover segment
+      for($j = $xoend; $j < $vector_length; $j++){
+        if($vector1[$j] == $vector1[$i]){
+          swap($vector1, $vector2, $j, $j);
+        }
+      }
+
+
+# second child 2
+
+# elements before crossover segment
+      for($j = 0; $j < $xostart; $j++){
+        if($vector2[$j] == $vector2[$i]){
+          swap($vector1, $vector2, $j, $j);
+        }
+      }
+
+# elements after crossover segment
+      for($j = $xoend; $j < $vector_length; $j++){
+        if($vector2[$j] == $vector2[$i]){
+          swap($vector1, $vector2, $j, $j);
+        }
+      }
+
+
+
+#      $e1pos = find($vector_start, $xostart, $vector1, $element1); # before the crossover point
+#      $e1pos = find($xoend, $vector_length, $vector1, $element1); # before the crossover point
+
+
+
+#      $e2pos = find($vector_start, $vector_length, $vector1, $element2); 
+
+#print $e1pos . " " . $e2pos . "\n";
+
+#print "1 " . $element1 . " " . $e1pos . "\n";
+
+
+#print "2 " . $element2 . " " . $e2pos . "\n";
+      
+#      swap($vector1, $vector2, $e1pos, $e2pos);
+
+#      $e1pos = find($vector_start, $vector_length, $vector2, $element1); 
+#      $e2pos = find($vector_start, $vector_length, $vector2, $element2); 
+      
+#      swap($vector1, $vector2, $e1pos, $e2pos);
+
+    }
+
+  }
+
+      }
+=cut
+
+
+  return ($new_vector1, $new_vector2);
+#  return (\@new_vector1, \@new_vector2);
+
+#  return ($vector1, $vector2);
+
+}
+
+
+sub swap2{              # swap elements between two vectors
+  my $vector1 = shift;
+  my $vector2 = shift;
+  my $pos1 = shift;
+  my $pos2 = shift;
+  my $temp;
+
+  $temp = @$vector1[$pos1];
+  @$vector1[$pos1] = @$vector2[$pos2];
+  @$vector2[$pos2] = $temp;
+
+  return;
+}
+
+sub find{
+  my $start = shift;
+  my $end = shift;
+  my $vector = shift;
+  my $element = shift;
+#print "f " . $element . "\n";
+  my ($i, $j);
+  my $pos;
+  for($i = $start; $i < $end; $i++){
+#print "f " . @$vector[$i] . "\n";
+    if(@$vector[$i] == $element){
+      $pos = $i;
+      last;
+    }
+  }
+  return $pos;
+}
+
+sub create_vector{
+  my $elements = shift;
+#  my $length = shift;
+
+  my ($i, $j);
+  my $vector_length = scalar(@$elements);
+
+  my @vector = ();
+
+  for($i = 0; $i < $vector_length; $i++){
+    push(@vector, 1); # check function of pop
+
+  }
+
+  return \@vector;
+
+}
+
+
+sub mutate{
+  my $vector = shift;
+  my $mutation_rate = shift;
+
+  if(rand() > $mutation_rate){ #skip mutation procedure if rand() too high
+    return;
+  }
+
+  my $vector_length = scalar(@$vector);
+  my $pos1 = floor(rand()*$vector_length);
+  my $pos2 = $pos1;
+
+  while ($pos2 == $pos1){  # make sure positions are different
+    $pos2 = floor(rand()*$vector_length);
+  }
+
+  swap1($vector, $pos1, $pos2);
+  return;
+
+}
+
+
+1;
+

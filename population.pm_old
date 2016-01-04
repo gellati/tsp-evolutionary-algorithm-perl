@@ -1,0 +1,63 @@
+package population;
+
+# development of this package discontinued
+
+use Route;
+
+
+sub new{
+    my $class = shift;
+    my $self = {
+      population = ();
+    };
+    bless $self, $class;
+    return $self;
+}
+
+
+
+
+
+
+
+
+
+sub crossover{
+  my $vector1 = shift;
+  my $vector2 = shift;
+  my $xopoint = shift;
+
+  my $vector_length = scalar(@$vector1);
+  my ($i, $j);
+  my @new_vector1 = ();
+  my @new_vector2 = ();
+  
+  for($i = 0; $i < $xopoint; $i++){
+    $new_vector1[$i] = @$vector1[$i];
+    $new_vector2[$i] = @$vector2[$i];
+  }
+
+  for($i = $xopoint; $i < $vector_length; $i++){
+    $new_vector1[$i] = @$vector2[$i];
+    $new_vector2[$i] = @$vector1[$i];
+  }
+
+  
+  my $xostart = $xopoint;
+  my $xoend = $vector_length;
+
+#  my $xostart = $xopoint;
+#  my $xoend = $vector_length;
+
+
+#  my ($new_vector1, $new_vector2) = pmxx(\@new_vector1, \@new_vector2, $xostart, $xoend);
+
+  my ($new_vector1, $new_vector2) = pmx($vector1, $vector2, $xostart, $xoend);
+
+
+  return (\@new_vector1, \@new_vector2);
+
+}
+
+1;
+

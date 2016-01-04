@@ -1,0 +1,87 @@
+\documentclass[11pt,a4paper,oneside]{article}
+
+\usepackage{amsmath,amssymb,amstext}
+\usepackage[utf8]{inputenc}
+\usepackage{fancyhdr}
+
+\setlength{\headheight}{36pt}
+\usepackage{listings}
+
+\usepackage{graphicx}
+\usepackage{caption}
+\usepackage{subcaption}
+%\usepackage{subfigure}
+%\usepackage{subfig}
+
+\usepackage{pdflscape}
+\usepackage{float}
+\usepackage{hyperref}
+
+\usepackage{verbatim}
+
+\setcounter{section}{0}
+
+
+\begin{document}
+
+\pagestyle{fancy}
+\rhead{Evolutionary Algorithms 2014\\Extra project\\Omar El-Begawy 26415}
+\lhead{}
+
+\section{Traveling Salesman Problem and evolutionary algorithms}
+
+A shortest route visiting all cities needs to be found, without visiting the same city twice. This is the traveling salesman problem. While the problem is relatively easy for a few cities, it becomes computationally more demanding as more cities are added to the set. The number of possible routes is the factorial of the number of cities to visit. Three cities have six different ways of visiting each, but with five cities the number is already 120 and ten cities give an boggling number of 3 628 800 different routes. So, given the 48 capitals of the 48 continental states of USA, how can one evaluate all possible routes and find the optimal path before the Universe suffers from heat death?
+
+The answer is you can't. The age of the Universe is $4.354 \times 10^{17}$ seconds, and 48 cities have approximately $1.24 \times 10^{61}$ different combinations. Even doing a yotta ($10^{24}$) evaluations per second, far beyond the abilities of any current supercomputer, will not suffice.
+
+But lest we be discouraged, there are still ways of tackling this problem. One way is to use heuristic methods, such as evolutionary algorithms. They will not give the optimal solution, at least not without considerable time. But they can give an acceptably short route in a short time scale.
+
+
+
+\section{Partially mapped crossover}
+
+In evolutionary computation, a chromosome is a data structure which contains a path through the 48 US capitals. New paths are created through mutation, and parts of existing paths are combined through crossover.
+
+This is a permutation problem, since the chromosomes cannot contain duplicate values. Having duplicate values would mean that a city would be visited twice, and the problem does not allow for such events. Therefore both the mutation and the crossover operators have to be adapted for this problem.
+
+Redesigning the mutation operator is quite straightforward. Places between two randomly chosen cities are switched on the chromosome, thereby preserving unity on the chromosome.
+
+Crossover is a bit more complicated. Since the switching of chromosome parts might bring duplicate values onto one chromosome, special procedures have to be implemented after the switching in order to correct for duplications. Partially matched crossover (PMX) is one way of addressing this problem.
+
+Since I cannot describe PMX any better than what Andy Thomas at the Generation5 website\footnote{\url{www.generation5.org/content/2001/ga_tsp.asp}} (who by the way has written the best description of PMX that I found on the internet), I will simply visually quote his description:
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=1.0\linewidth]{generation5_tsp_pmx_explanation.png}
+\end{figure}
+
+With this particulars in mind, I proceeded to solving the TSP US route problem.
+
+\section{Methods and materials}
+
+The Euclidean distance between the cities were calculated on the basis of coordinates given by the instructor.  A program emplying evolutionary algorithms was written in Perl 5.14 and run on a laptop with Crunchbang Linux and a 1.6 GHz processor.
+
+The parameters for the evolutionary algorithms were a population size of 100, 0.05 mutation rate, 2000 generations, crossover rate 0.95. Crossover was 2-point, and tournament selection was employed with a tournament size of 6.
+
+\section{Results}
+
+The shortest path the program came to had a length of 47632 (distance unit unknown). The path is visualised in the following picture:
+
+\begin{landscape}
+\begin{figure}[h]
+\centering
+\includegraphics[width=1.0\linewidth]{pic2_routelength47632.png}
+\end{figure}
+\end{landscape}
+
+As it can be difficult to apprehend the exact route, the route was also drawn on a circle diagram:
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=1.0\linewidth]{circlemap.png}
+\end{figure}
+
+
+
+
+\end{document}

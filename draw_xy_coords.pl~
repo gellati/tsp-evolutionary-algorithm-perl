@@ -1,0 +1,365 @@
+#!/usr/bin/perl -w
+
+use warnings;
+use strict;
+
+#no warnings;
+use Math::Round;
+use Tk;
+use Data::Dumper;
+use JSON;
+use Math::Trig;
+
+use plotUScities;
+use googleV3GeoCode;
+use parser;
+
+my $unit   = 6;
+my $margin = 1;
+
+my @cid;
+
+print "hello" . "\n";
+
+#my $main = MainWindow->new;
+
+#$main->title('x and y coordinates placed on canvas');
+
+#my $data = parsexydata();
+
+my $datafile = '48uscaps.json';
+
+
+my $parser = parser->new();
+#my $data = parser->parsexjson()
+
+my $data = $parser->parsexjson($datafile);
+
+
+#distance_matrix($data);
+
+
+#my @route = (1,2,3);
+
+  my @states = (1, 4, 13, 2, 25);
+
+#print routedistance(\@route, $data);
+
+=comment
+  my $map_width = 600;
+  my $map_height = 400;
+
+  my $winMain = MainWindow->new();
+  $winMain->title( 'Plot x(t), y(t)' );
+  my $frmCan1 = $winMain->Frame();
+  $frmCan1->pack(-side => 'top', -fill => 'both', -expand => 'yes');
+
+
+  my $can1 = $frmCan1->Canvas(-width => $map_width,
+                            -height => $map_height,
+  );
+  $can1->pack(-expand => 'yes', -fill => 'both');
+
+  my $winMain2 = MainWindow->new();
+  $winMain2->title( 'Plot x(t), y(t)' );
+  my $frmCan2 = $winMain2->Frame();
+  $frmCan2->pack(-side => 'top', -fill => 'both', -expand => 'yes');
+
+  my $can2 = $frmCan2->Canvas(-width => $map_width,
+                            -height => $map_height,
+  );
+  $can2->pack(-expand => 'yes', -fill => 'both');
+
+
+
+TSPdrawCities($can1, $data, \@states, $map_width, $map_height);
+TSPcircleMap($can2, $data, \@states, $map_width, $map_height);
+
+=cut
+
+my $d = plotUScities->new();
+$d->drawUSmap($data);
+
+#my $g = googleV3GeoCode->new();
+#$g->getCoords($data);
+
+
+
+#doClear($can);
+#sleep 0.5;
+#}
+
+MainLoop();
+
+# transform x, y to plot coordinates
+#
+
+#sub flash_widget {  
+#    # Flash a widget attribute periodically.  
+#    my ($w, $opt, $val1, $val2, $interval) = @ARG;  
+#    $w->configure($opt => $val1);     
+#    $MW->after($interval, [\&flash_widget, $w, $opt,
+#			   $val2, $val1, $interval]);  
+#} 
+
+sub transform{ #($$){
+    my( $x, $y ) = @_;
+    $x = $unit *($x+1) + $margin;
+    $y = $unit *($y+1) + $margin;
+    return( $x.'c', $y.'c' );
+}
+
+
+sub TSPcircleMap{
+  my $can = shift; #, $fref) = @_;
+  my $data = shift;
+  my $route = shift;
+  my $map_width = shift;
+  my $map_height = shift;
+
+  my $data_length = scalar(@$data);
+
+  my ($i, $j);
+  my $radius = 50;
+  my $margin = 100;
+
+  my $states_length = scalar(@$route);
+  my $segment_size = 2 * pi / $states_length;
+  print "s " . $segment_size . "\n";
+  my $angle = 0;
+  my ($x,$y);
+  my @xcoords;
+  my @ycoords;
+  my @coords;
+
+  my @distances;
+  my $n = 0;
+  my @temp = ();
+  for($i = 0; $i < $states_length; $i++){
+      print "tsp " . @$route[$i] . "\t" . @$route[$i+1] . "\n";
+      push(@temp, @$route[$i]);
+      push(@temp, @$route[$i+1]);
+
+      push(@distances, routedistance( \@temp,$data));
+
+    $n++;
+      @temp = ();
+  }
+
+  my ($textposx, $textposy);
+  my @textcoords;
+
+  my ($distposx, $distposy);
+  my @distcoords;
+
+  $n = 0;
+
+  while($angle < 2 * pi){
+
+### drawing the tsp route in a circle
+    $x = round($radius * sin($angle)) + $map_width/2;
+    $y = round($radius * cos($angle)) + $map_height/2;
+    print "x " . $x . " y " . $y . " " . $radius . "\n";
+
+    push(@cid, $can->createOval($x - $radius/4,
+                               $y - $radius/4,
+                               $x + $radius/4,
+                               $y + $radius/4));
+
+## writing the names of the cities
+    $textposx = round( ( $radius + 50 ) * sin($angle)) + $map_width/2;
+    $textposy = round( ( $radius + 50 ) * cos($angle)) + $map_height/2;
+    push(@textcoords, $textposx);
+    push(@textcoords, $textposy);
+#    push(@cid, $can->createText(($textcoords[0], $textcoords[1]), -text=> "$distances[$n]"));
+   push(@cid, $can->createText(($textposx, $textposy), -text=> "@$data[$n]->{capital}" . " " . "@$data[$n]->{abbreviation}"));
+#    $n++;
+    @distcoords = ();
+
+
+## writing the distances between cities
+    $distposx = round( ( $radius + 20 ) * sin($angle + $segment_size/2)) + $map_width/2;
+    $distposy = round( ( $radius + 20 ) * cos($angle + $segment_size/2)) + $map_height/2;
+    push(@distcoords, $distposx);
+    push(@distcoords, $distposy);
+    push(@cid, $can->createText(($distcoords[0], $distcoords[1]), -text=> "$distances[$n]"));
+    $n++;
+    @distcoords = ();
+
+    $angle += $segment_size;
+
+    push(@coords, $x);
+    push(@coords, $y);
+
+  }
+  # to get path closed
+  push(@coords, $coords[0]);
+  push(@coords, $coords[1]);
+
+  my $ncoord = scalar(@xcoords);
+
+    push(@cid, $can->createLine(@coords, -width => 0.5, -smooth => 0));
+
+  $n = 0;
+
+}
+
+
+sub TSPdrawCities{
+  my $can = shift;
+  my $data = shift;
+  my $states = shift;
+  my $map_width = shift;
+  my $map_height = shift;
+
+  my ($i, $j);
+  my $radius = 50;
+
+#print @$data[2][1] . "\n";
+
+#print Dumper(@$data[2]->[2]);
+  my $xmargin = 100;
+  my $ymargin = 50;
+
+
+  my $states_length = scalar(@$states);
+  my $segment_size = 2 * pi / $states_length;
+#print "s " . $segment_size . "\n";
+  my $angle = 0;
+  my ($x,$y);
+  my @linecoords;
+  my $n = 0;
+
+  my $just = 20;
+  for($i = 0; $i < $states_length; $i++){
+
+#print round(($data[$i][1] - $radius)/1) . "\n";
+
+
+#=comment
+# print coordinates in list
+
+    push(@cid, $can->createOval( round((@$data[$states[$i]]->{xcoord} - $radius)/$just) + $xmargin,
+                             $map_height - (round((@$data[$states[$i]]->{ycoord} - $radius)/$just + $ymargin)),
+                             ((@$data[$states[$i]]->{xcoord} + $radius)/$just) + $xmargin,
+                             $map_height - (round((@$data[$states[$i]]->{ycoord} + $radius)/$just + $ymargin))));
+
+    push(@cid, $can->createText( round((@$data[$states[$i]]->{xcoord})/$just) + $xmargin + 5,
+                             $map_height - (round((@$data[$states[$i]]->{ycoord})/$just + $ymargin)),
+                             -text => @$data[$n]->{capital},
+                             -anchor => "w"));
+
+    push(@linecoords, round(@$data[$states[$i]]->{xcoord}/$just)+$xmargin);
+    push(@linecoords, $map_height - round(@$data[$states[$i]]->{ycoord}/$just + $ymargin));
+    if($i < $states_length - 1){
+      push(@linecoords, round(@$data[$states[$i+1]]->{xcoord}/$just + $xmargin));
+      push(@linecoords, $map_height - round(@$data[$states[$i+1]]->{ycoord}/$just + $ymargin));
+    }
+    else{
+      push(@linecoords, round(@$data[$states[0]]->{xcoord}/$just + $xmargin));
+      push(@linecoords, $map_height - round(@$data[$states[0]]->{ycoord}/$just + $ymargin));
+    }
+
+    push(@cid, $can->createLine(@linecoords, -width => 0.5, -smooth => 0));
+
+    $n++;
+#=cut
+
+
+=comment
+# draw all coordinates in json file
+push(@cid, $can->createOval( round((@$data[$i]->{xcoord} - $radius)/20) + $margin,
+                             300 - (round((@$data[$i]->{ycoord} - $radius)/20)),
+                             ((@$data[$i]->{xcoord} + $radius)/20) + $margin,
+                             300 - (round((@$data[$i]->{ycoord} + $radius)/20))));
+
+push(@cid, $can->createText( round((@$data[$i]->{xcoord})/20) + $margin + 5,
+                             300 - (round((@$data[$i]->{ycoord})/20)),
+                             -text => @$data[$i]->{capital},
+                             -anchor => "w"));
+
+=cut
+
+=comment
+push(@cid, $can->createOval( round((@$data[$i]->[1] - $radius)/20) + $margin,
+                             300 - (round((@$data[$i]->[2] - $radius)/20)),
+                             ((@$data[$i]->[1] + $radius)/20) + $margin,
+                             300 - (round((@$data[$i]->[2] + $radius)/20))));
+
+push(@cid, $can->createText( round((@$data[$i]->[1])/20) + $margin + 5,
+                             300 - (round((@$data[$i]->[2])/20)),
+                             -text => $i,
+                             -anchor => "w"));
+=cut
+
+
+  }
+  return;
+
+}
+
+
+
+
+sub doClear{
+    my( $can ) = shift;
+    $can->delete( @cid );
+    @cid = ();
+}
+
+
+
+sub retrieve_by_id{
+  my $id = shift;
+  my $data = shift;
+
+  my ($i, $j);
+  my $data_length = scalar(@$data);
+
+#  for($i
+
+
+}
+
+
+
+# make a distance matrix from json data about us cities
+sub distance_matrix{
+  my $data = shift;
+
+my @distances;
+my $n = 0;
+  my $nlines = scalar(@$data);
+  print "ss" . "\n";
+
+  my($i, $j);
+  print "\t";
+  for($i = 0; $i < $nlines/8; $i++){
+      print @{$data}[$i]->{state} . "\t";
+  }
+  print "\n";
+
+for($i = 0; $i < $nlines/8; $i++){
+    print @{$data}[$i]->{state} . "\t";
+  for($j = 0; $j < $nlines/8; $j++){
+#    $distance[$j][$j] = $data[$i]
+#print @{$data}[$j]->{xcoord} . "\n";
+
+print round((sqrt( (@{$data}[$j]->{xcoord} - @{$data}[$i]->{xcoord})**2 + (@{$data}[$j]->{ycoord} - @{$data}[$i]->{ycoord})**2))) . "\t";
+
+  }
+print "\n";
+#$n++;
+}
+
+}
+
+
+
+
+
+
+
+
+
+

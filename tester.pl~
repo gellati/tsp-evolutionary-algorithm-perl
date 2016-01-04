@@ -1,0 +1,144 @@
+#!/usr/bin/perl -w
+
+use warnings;
+use strict;
+
+use POSIX;
+use List::Util 'shuffle';
+use Math::Round;
+use Data::Dumper;
+
+use parser;
+use TkDrawUSCitiesCanvas;
+use calculator;
+use GDplotUScities;
+use evolutionary;
+
+my $mutation_rate = 0.01;
+
+my @vector1 = (3, 4, 6, 2, 1, 5);
+my @vector2 = (4, 1, 5, 3, 2, 6);
+
+#my @vector1 = (0..47);
+
+my $xopoint = 2;
+my $xoend = 3; # works if $xoend != vector length. indexing starts from 0, xoend = length - 1
+       # last element alone can be swapped if xostart = vectorlength-2 and xoend = vectorlength-1 
+
+
+my ($i, $j);
+my $vector_length = scalar(@vector1);
+
+
+=comment
+my $pop = generate_arrays(\@vector1, 2);
+print "p  " . "@$pop" . "\n";
+
+my $n = scalar(@$pop);
+for($i = 0; $i < $n; $i++){
+my $m = scalar(@{$pop->[$i]});
+print "p " . $m . "\n";
+for($j = 0; $j < $m; $j++){
+print @$pop[$i]->[$j];
+}
+}
+print "\n";
+=cut
+
+for($i = 0; $i < $vector_length; $i++){
+  if($i == $xopoint){
+    print "|";
+  }
+  print $vector1[$i] . " ";
+}
+print "\n";
+
+
+=comment
+for($i = 0; $i < $vector_length; $i++){
+  if($i == $xopoint){
+    print "|";
+  }
+  if($i == $xoend){
+    print "|";
+  }
+  print $vector2[$i] . " ";
+}
+print "\n";
+=cut
+
+
+#  print "@vector1" . "\n";
+#  print "@vector2" . "\n";
+
+
+
+
+#printVector(\@vector1);
+
+
+my $datafile = '48uscaps.json';
+my $parser = parser->new();
+my $data = $parser->parsexjson($datafile);
+#my $distance = routedistance(\@vector1, $data);
+#print $distance . "\n";
+my $temp = \@vector1;
+
+
+print "bfr population creation" . "\n";
+print Dumper(@vector1);
+#my @pop = createPopulation(3, $temp);
+my $pop = createPopulation(3, $temp);
+print "aftr population creation" . "\n";
+print Dumper($pop);
+#$temp = \@pop;
+$temp = $pop;
+
+#$temp = \@pop;
+for($i = 0; $i < 1; $i++){
+
+#printPopulation(\@pop);
+print "before tournament" . "\n";
+print Dumper($temp);
+$temp = tournament($temp, $data);
+print "after tournament" . "\n";
+print Dumper($temp);
+
+}
+
+
+#my ($v1, $v2) = pmx(\@vector1, \@vector2, $xopoint, $xoend);
+#print "@$v1" . "\n";
+#print "@$v2" . "\n";
+
+
+
+
+#my $d = GDplotUScities->new();
+#$d->drawUSmap($data);
+
+#my $g = googleV3GeoCode->new();
+#$g->getCoords($data);
+
+
+  my $map_width = 600;
+  my $map_height = 400;
+
+#my $tkc = TkDrawUSCitiesCanvas->new;
+
+#$tkc->drawTSPcanvas($data, \@vector1, $map_width, $map_height);
+
+#my $gdp = GDplotUScities->new;
+
+#$gdp->drawUSmap($data);
+
+
+
+
+
+
+
+
+
+
+

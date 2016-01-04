@@ -1,0 +1,50 @@
+package route;
+### discontinued development of this package
+
+
+sub new{
+    my $class = shift;
+    my $self = {
+      route = ();
+    };
+    bless $self, $class;
+    return $self;
+}
+
+
+
+
+
+
+sub create_vector{
+  my $self = shift;
+  my $elements = shift;
+
+  my ($i, $j);
+  my $vector_length = scalar(@$elements);
+
+  my @vector = ();
+
+  for($i = 0; $i < $vector_length; $i++){
+    push(@vector, 1); # check function of pop
+
+  }
+
+  return \@vector;
+
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+1;

@@ -1,0 +1,86 @@
+package googleV3GeoCode;
+
+#!/usr/bin/perl -w
+# googleV3GeoCode.pl - lookup long/lat of an address using Google
+# http://search.cpan.org/~arcanez/Geo-Coder-Google-0.14/lib/Geo/Coder/Google/V3.pm
+# http://www.ibm.com/developerworks/library/os-perlgdplot/
+
+
+use strict;
+use Data::Dumper;
+use Geo::Coder::Googlev3; #::V3;
+
+sub new{
+    my $class = shift;
+    my $self = {
+    };
+    bless $self, $class;
+    return $self;
+}
+
+
+sub getCoords{
+  my $self = shift;
+  my $data = shift;
+
+
+#print "hello" . "\n";
+
+my $geocoder = Geo::Coder::Googlev3->new();
+#my $geocoder = Geo::Coder::Googlev3->new(apiver => 3);
+
+my ($i, $j);
+my $ndata = scalar(@$data);
+my $location;
+print "\n";
+for($i = 20; $i < $ndata; $i++){
+$location = $geocoder->geocode( location=> @$data[$i]->{capital} . "," . @$data[$i]->{abbreviation});
+print @$data[$i]->{capital} . "\t";
+print $location->{'geometry'}->{'location'}->{'lat'} . "\t";
+print $location->{'geometry'}->{'location'}->{'lng'} . "\n";
+}
+
+#my $location = $geocoder->geocode( location => 'Hollywood and Highland, Los Angeles, CA' );
+#my $lo1 = $geocoder->geocode(location => 'Montgomery, Alabama');
+#my $lo2 = $geocoder->geocode(location => 'Phoenix, Arizona');
+#my $lo3 = $geocoder->geocode(location => 'Sacramento, California');
+
+#print $lo . "\n";
+
+#print $lo1->{'address_components'}[2]->{'short_name'} . "\n";
+#print $lo1->{'geometry'}->{'location'}->{'lat'} . "\n";
+#print $lo1->{'geometry'}->{'location'}->{'lng'} . "\n";
+
+
+
+
+
+#print Dumper($lo);
+#print Dumper($location);
+
+# below code from yahooGeoCode.pl, convert for Google
+=comment
+#!/usr/bin/perl -w  
+# yahooGeoCode.pl - lookup long/lat of an address using yahoo
+use strict;
+
+use Geo::Coder::Yahoo;
+my $geocoder = Geo::Coder::Yahoo->new(appid => 'my_app' );
+
+while( my $line = <STDIN> )
+{
+  chomp($line);
+  my $location = "";
+  $location = $geocoder->geocode( location => "$line" );
+
+  for ( @{$location} )
+  {
+    my %hash = %{$_};
+    print "$hash{longitude} $hash{latitude} # $line \n";
+  } 
+}#while stdin
+=cut
+
+}
+1;
+

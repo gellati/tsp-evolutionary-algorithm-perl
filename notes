@@ -1,0 +1,12 @@
+
+
+command to install Geo::Coder::Yahoo from CPAN
+
+sudo cpanm Geo::Coder::Yahoo
+
+
+installation failed, can look at cpanm log file
+
+sudo less /root/.cpanm/build.log
+
+

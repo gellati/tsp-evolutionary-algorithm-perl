@@ -1,0 +1,223 @@
+#!/usr/bin/perl -w
+
+package plotUScities;
+# worldCompositeMap.pl - overlay text, images and shapes on map image
+use strict;
+use GD;
+use Math::Round;
+
+sub new{
+    my $class = shift;
+    my $self = {
+    };
+    bless $self, $class;
+    return $self;
+}
+
+# us map uses alber projection
+sub drawUSmap{
+  my $self = shift;
+  my $data = shift;
+
+  my $newMap = GD::Image->newFromPng( 'USA100.png' );
+
+  my $map_top_lat = 50;
+  my $map_top_long = -125;
+
+  my $map_bottom_lat = 24;
+  my $map_bottom_long = -66;
+
+  my ($i, $j);
+  my ($xpos, $ypos);
+  my ($lat, $long);
+  my $imageWidth = $newMap->width();
+  my $imageHeight = $newMap->height();
+
+  ($imageWidth, $imageHeight) = $newMap->getBounds();
+
+  my $map_lat_scale = $imageHeight / ($map_top_lat - $map_bottom_lat);
+  my $map_long_scale = $imageWidth / ($map_bottom_long - $map_top_long);
+
+
+#MAP USA100 USA100.png 50 -125 24 -66
+  my $data_length = scalar(@$data);
+
+  my $black = $newMap->colorAllocate(0,0,0);       
+  my $red = $newMap->colorAllocate(255,0,0);      
+  my $blue = $newMap->colorAllocate(0,0,255);
+
+  for($i = 0; $i < $data_length; $i++){
+    $lat = @$data[$i]->{latitude};
+    $long = @$data[$i]->{longitude};
+
+# unknown projection
+#    $ypos = $map_lat_scale * ($map_top_lat - $lat);
+#    $xpos = $map_long_scale * ($long - $map_top_long);
+
+
+    ($xpos, $ypos) = $self->convert_latlong_to_xy_alber($lat, $long);
+
+    $newMap->filledRectangle($xpos + 3, $ypos - 3, $xpos - 3, $ypos + 3, $black);
+    $newMap->string(gdSmallFont,$xpos, $ypos,@$data[$i]->{capital},$black);
+    $newMap->string(gdSmallFont,$xpos, $ypos+10,@$data[$i]->{abbreviation},$black);
+
+  }
+
+  open(IMG, '>pic.png') or die $!;
+  binmode IMG;
+  print IMG $newMap->png;
+  close(IMG);
+
+#my $topMargin = 110;
+
+=comment
+  my $topMargin = 0;
+  my $blankMap = new GD::Image($imageWidth, $imageHeight); #+$topMargin);
+
+  my $white = $blankMap->colorAllocate(255,255,255);
+  my $black = $blankMap->colorAllocate(0,0,0);
+
+  $blankMap->copy( $newMap, 0,$topMargin, 0,0, $imageWidth,$imageHeight );
+
+  my @pixels = ();
+  my @data = ();
+#  open( PIXELFILE, "$ARGV[0]" ) or die "can't open pixels file";
+#    while( my $line = <PIXELFILE> ){ push @pixels, $line }
+#  close(PIXELFILE);
+
+#open( DATAFILE, "$ARGV[1]" ) or die "can't open data file";
+#  while( my $line = <DATAFILE> ){ push @data, $line }
+#close(DATAFILE);
+
+  my $posCount = 0;
+  my $textX = 25;
+  my $textY = 20;
+  my $annotateRowIncrement = 150;
+
+  for my $dataLine ( @data ){
+    my( undef, undef, $pointX, $pointY) =  split " ", $pixels[$posCount];
+
+#  my( $text, $faceImgName ) = split '##', $dataLine;
+
+#  $blankMap->stringFT( $black, '/usr/share/fonts/bitstream-vera/Vera.ttf',
+#    8,0,$textX,$textY, "$text", 
+#    {   linespacing=>0.6,
+#        charmap  => 'Unicode',
+#    });
+
+
+#  $blankMap->rectangle( $textX-10, 5, $textX+120, 100, $black);
+#    $blankMap->line($textX+50, 100, $pointX, $pointY+$topMargin, $black );
+
+#  my $faceImg = newFromPng GD::Image( $faceImgName );
+#  $blankMap->copyResized( $faceImg, $textX,$textY+10, 0,0, 60,60, 115,115 );
+
+    $textX += $annotateRowIncrement;
+    $posCount++;
+
+  }#for each data line
+
+  my $outfile = "outmap.png";
+  open( TILEOUT,"> $outfile") or die "can't write $outfile";
+    print TILEOUT $blankMap->png;
+  close(TILEOUT);
+=cut
+
+return;
+
+}
+
+
+sub TSPUSroute{
+  my $self = shift;
+  my $data = shift;
+  my $route = shift;
+
+  $self->drawUSmap($data);
+
+
+  return;
+}
+
+
+sub convert_latlong_to_xy_alber{
+  my ($self, $lat, $long) = @_;
+
+  my $PI = 3.141592654;
+
+#PROJECTION USA100 ALBER 1406.35 30.8 45.5 21.7 -99.9 464 781
+
+my @F = (0, 1406.35, 30.8, 45.5, 21.7, -99.9, 464, 781);
+
+  my ($R, $false_easting, $false_northing) = @F[1,6,7];
+  my ($phi_1, $phi_2, $phi_0, $lambda_0) = @F[2..5];
+
+  my $PHI_1 = ($phi_1 * $PI) / 180.0;
+  my $PHI_2 = ($phi_2 * $PI) / 180.0;
+  my $PHI_0 = ($phi_0 * $PI) / 180.0;
+  my $LAMBDA_0 = ($lambda_0 * $PI) / 180.0;
+
+  my $N = (sin($PHI_1) + sin($PHI_2)) / 2.0;
+  my $C = cos($PHI_1) ** 2 + 2.0 * $N * sin($PHI_1);
+
+######
+
+  my $phi = ($lat * $PI) / 180.0;
+  my $lambda = ($long * $PI) / 180.0;
+
+  my $p   = ($R * sqrt($C - 2.0 * $N * sin($phi))) / $N;
+  my $p_0 = ($R * sqrt($C - 2.0 * $N * sin($PHI_0))) / $N;
+  my $theta = $N * ($lambda - $LAMBDA_0);
+
+  my $x = $false_easting + round($p * sin($theta));
+  my $y = $false_northing - round($p_0 - $p * cos($theta));
+
+  return ($x, $y);
+}
+
+
+
+
+
+
+
+
+
+1;
+
+
+=comment
+  my ($i, $j);
+  my $data_length = scalar(@$data);
+#  my $mapname = '/home/omar/Desktop/StudyFiles/EvolutionaryAlgorithms/Hojning/USA100.png';
+  my $mapname = 'USA100';
+
+  my $outfile = "/home/omar/Desktop/StudyFiles/EvolutionaryAlgorithms/Hojning/outmap.png";
+  my $infofile = '/home/omar/Desktop/StudyFiles/EvolutionaryAlgorithms/Hojning/.mapinfo';
+
+  my $newMap = newFromPng GD::Image( 'USA100.png' );
+
+  my ($lat, $long, $mapoption, $outputoption, $infooption);
+  $mapoption = '-m';
+  $infooption = '-i';
+  $outputoption = '>';
+  my $p = 'perl';
+  my $drawer = '/home/omar/Desktop/StudyFiles/EvolutionaryAlgorithms/Hojning/plot-latlong';
+  my $cat = 'cat';
+  for($i = 0; $i < $data_length/20; $i++){
+$lat = @$data[$i]->{latitude};
+$long = @$data[$i]->{longitude};
+#print $lat . "\t";
+#system($p, $drawer, $lat, $long, $mapoption, $mapname, $infooption, $infofile, $outputoption, $outfile);
+
+system($p, $drawer, $lat, $long, $mapoption, $mapname, $outputoption, $outfile);
+
+
+
+#    `cat locations.txt | ./plot-latlong >plot.png`;
+  }
+
+=cut
+
+
+
